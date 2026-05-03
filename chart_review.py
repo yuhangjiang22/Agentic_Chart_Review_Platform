@@ -91,6 +91,7 @@ def run_reviewer(
     question: str,
     model_name: str,
     domain,
+    provider: str = "azure",
 ) -> ReviewRun:
     """Run a single reviewer level and return the ReviewRun.
 
@@ -106,7 +107,7 @@ def run_reviewer(
     factory = getattr(module, factory_name)
     system_prompt = getattr(domain, prompt_attr)
 
-    agent, metrics = factory(chart_dir, system_prompt=system_prompt, model_name=model_name)
+    agent, metrics = factory(chart_dir, system_prompt=system_prompt, model_name=model_name, provider=provider)
 
     start_time = time.time()
     result = agent.invoke(
@@ -168,7 +169,7 @@ def write_run_artifacts(output_dir: str, runs: dict[str, ReviewRun], domain_name
 
 def main():
     """Run one question on one chart across the requested reviewer levels."""
-    from config import DEFAULT_MODEL
+    from config import DEFAULT_MODEL, DEFAULT_OLLAMA_MODEL, DEFAULT_PROVIDER
 
     parser = argparse.ArgumentParser(
         description="Run one chart-review question across reviewer levels."
@@ -185,14 +186,21 @@ def main():
         help=f"Python module path of the domain pack (default: {DEFAULT_DOMAIN})",
     )
     parser.add_argument(
-        "--model", default=DEFAULT_MODEL,
-        help=f"Azure OpenAI deployment name (default: {DEFAULT_MODEL})",
+        "--provider", default=DEFAULT_PROVIDER, choices=["azure", "ollama"],
+        help="LLM provider to use (default: from LLM_PROVIDER env var or 'azure')",
+    )
+    parser.add_argument(
+        "--model", default=None,
+        help="Model/deployment name (defaults to AZURE_OPENAI_DEPLOYMENT or OLLAMA_MODEL based on provider)",
     )
     parser.add_argument(
         "--output", default="./results",
         help="Output directory for results (default: ./results)",
     )
     args = parser.parse_args()
+
+    if args.model is None:
+        args.model = DEFAULT_OLLAMA_MODEL if args.provider == "ollama" else DEFAULT_MODEL
 
     domain = load_domain(args.domain)
     domain_name = getattr(domain, "NAME", args.domain)
@@ -201,13 +209,14 @@ def main():
     print(f"  Chart:    {args.chart}")
     print(f"  Question: {args.question}")
     print(f"  Levels:   {', '.join(args.levels)}")
+    print(f"  Provider: {args.provider}")
     print(f"  Model:    {args.model}")
     print(f"  Output:   {args.output}")
 
     runs: dict[str, ReviewRun] = {}
     for level_key in sorted(args.levels):
         try:
-            run = run_reviewer(level_key, args.chart, args.question, args.model, domain)
+            run = run_reviewer(level_key, args.chart, args.question, args.model, domain, provider=args.provider)
             runs[run.level] = run
             print(f"\n  {run.level} reviewer complete: {run.wall_clock_seconds:.1f}s, "
                   f"{len(run.files_read)} files read, "

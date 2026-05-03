@@ -8,7 +8,8 @@ from reviewers.tools import create_chart_tools
 def create_naive_reviewer(
     chart_dir: str,
     system_prompt: str,
-    model_name: str = "anthropic/claude-sonnet-4-5",
+    model_name: str | None = None,
+    provider: str = "azure",
 ) -> tuple:
     """Build a naive reviewer agent with only list_chart and read_note tools.
 
@@ -20,7 +21,7 @@ def create_naive_reviewer(
         Tuple of (compiled_agent, metrics).
     """
     tools, metrics = create_chart_tools(chart_dir, enable_search=False)
-    model = create_model(model_name)
+    model = create_model(model_name, provider=provider)
 
     agent = create_deep_agent(
         model=model,

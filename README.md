@@ -2,7 +2,7 @@
 
 A domain-agnostic pipeline that answers structured clinical questions about a
 patient's chart by reading clinical notes. The reviewers are built on top of [`deepagents.create_deep_agent`](https://pypi.org/project/deepagents/)
-and use Azure OpenAI for the underlying LLM.
+and support **Azure OpenAI** or a **local model via [Ollama](https://ollama.com)** as the underlying LLM.
 
 ---
 
@@ -12,7 +12,7 @@ and use Azure OpenAI for the underlying LLM.
 Agentic_Chart_Review_Platform/
 ├── benchmark.py                 # CLI: run all questions in a domain pack
 ├── chart_review.py              # CLI: run one question + reviewer execution helpers
-├── config.py                    # Azure OpenAI client (reads .env)
+├── config.py                    # LLM client factory — Azure OpenAI or Ollama (reads .env)
 │
 ├── reviewers/
 │   ├── naive_reviewer.py        # Level 1: list_chart + read_note
@@ -84,7 +84,7 @@ pip install -r requirements.txt
 ```
 
 See [requirements.txt](requirements.txt) for the pinned-by-name list
-(`langchain-openai`, `langchain-core`, `python-dotenv`, `deepagents`).
+(`langchain-openai`, `langchain-ollama`, `langchain-core`, `python-dotenv`, `deepagents`).
 
 ### `.env` file
 
@@ -94,16 +94,25 @@ your values:
 
 ```bash
 cp .env.example .env
-# then edit .env with your real Azure OpenAI credentials
+# then edit .env with your credentials / provider choice
 ```
 
-Required keys:
+#### Azure OpenAI (default)
 
 ```
+LLM_PROVIDER=azure
 AZURE_OPENAI_API_KEY=...
 AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com
-AZURE_OPENAI_DEPLOYMENT=gpt-5.2          # default deployment for the reviewers
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini      # default deployment for the reviewers
 AZURE_OPENAI_API_VERSION=2024-06-01      # optional; defaults to 2024-06-01
+```
+
+#### Ollama (local models)
+
+```
+LLM_PROVIDER=ollama
+OLLAMA_MODEL=openai/gpt-oss-120b                # any model you have pulled locally
+OLLAMA_BASE_URL=http://localhost:11434   # optional; this is the default
 ```
 
 Without `.env` any run fails fast at [config.py](config.py) with a clear error
@@ -151,8 +160,22 @@ Flags:
 - `--question` — the question to answer (required)
 - `--levels` — subset of `1 2` (default: both)
 - `--domain` — Python module path of the domain pack (default: `examples.lung_cancer`)
-- `--model` — Azure deployment name (default: from `AZURE_OPENAI_DEPLOYMENT`)
+- `--provider` — `azure` or `ollama` (default: from `LLM_PROVIDER` env var or `azure`)
+- `--model` — model/deployment name (default: from `AZURE_OPENAI_DEPLOYMENT` or `OLLAMA_MODEL`)
 - `--output` — output directory (default: `./results`)
+
+To use a local Ollama model instead of Azure:
+
+```bash
+# pull a model first (one-time)
+ollama pull openai/gpt-oss-120b
+
+python chart_review.py \
+  --chart lung-cancer-patient-profile/patient_xxx \
+  --question "Was genomic testing performed?" \
+  --provider ollama \
+  --model openai/gpt-oss-120b
+```
 
 Writes `review_<level>.txt`, `token_usage_<level>.txt`, `trace_<level>.json`,
 and `metrics.json` to the output directory.
@@ -170,7 +193,8 @@ Flags:
 - `--chart` — path to the patient directory (required)
 - `--output` — output base directory (default: `./benchmark_results`)
 - `--domain` — Python module path of the domain pack (default: `examples.lung_cancer`)
-- `--model` — Azure deployment name (default: from `AZURE_OPENAI_DEPLOYMENT`)
+- `--provider` — `azure` or `ollama` (default: from `LLM_PROVIDER` env var or `azure`)
+- `--model` — model/deployment name (default: from `AZURE_OPENAI_DEPLOYMENT` or `OLLAMA_MODEL`)
 
 ### Convenience wrapper for the lung cancer example
 

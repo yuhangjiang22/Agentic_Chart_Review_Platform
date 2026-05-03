@@ -21,8 +21,8 @@ from chart_review import load_domain  # noqa: E402
 from config import DEFAULT_MODEL  # noqa: E402
 
 
-CHART_DIR = "patient_profiles/patient_1168000004357584"
-OUTPUT_DIR = "results/patient_1168000004357584"
+CHART_DIR = "patient_profiles/patient_xxx"
+OUTPUT_DIR = "results/patient_xxx"
 
 
 def main():

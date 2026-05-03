@@ -262,28 +262,6 @@ A summary line in the run-complete output also breaks input vs. output:
 naive reviewer complete: 12.4s, 7 files read, 4750 in / 360 out (5110 total) tokens
 ```
 
-### Programmatic access
-
-The token monitor is exposed as four helpers in
-[evaluation/metrics.py](evaluation/metrics.py):
-
-```python
-from evaluation.metrics import (
-    collect_token_usage,             # (input, output) totals
-    collect_token_usage_detailed,    # (input, output, cached_input) totals
-    per_message_token_usage,         # list[dict] of per-step rows
-    format_token_usage_report,       # the printable ASCII table
-)
-```
-
-The same per-step rows land in `all_metrics.json` under
-`<q_id>__<level>.per_message_tokens`, so downstream tooling can analyze cost
-distribution without reparsing the message list.
-
-The extractor reads `response_metadata.token_usage` first (Azure/OpenAI shape)
-and falls back to LangChain's `usage_metadata` shape, so swapping providers
-will not silently zero the counters.
-
 ---
 
 ## Trace Module

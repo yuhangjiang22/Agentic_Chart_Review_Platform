@@ -44,9 +44,7 @@ written without any domain knowledge — it loads a domain pack at runtime via
 ## Reviewer Levels
 
 The two reviewer architectures live in [reviewers/](reviewers/) and share the
-chart tools defined in [reviewers/tools.py](reviewers/tools.py); the
-`enable_search` flag controls which tools are exposed to the agent. System
-prompts come from the active domain pack and are passed in by the caller.
+chart tools defined in [reviewers/tools.py](reviewers/tools.py).
 
 | Level | Name   | Tools available                              | Use case                                       |
 |-------|--------|----------------------------------------------|------------------------------------------------|
